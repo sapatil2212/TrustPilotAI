@@ -69,7 +69,7 @@ function HeroSection() {
           </div>
           
           {/* Trust indicators */}
-          <div className="flex items-center gap-8 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-500" />
               <span>14-day free trial</span>

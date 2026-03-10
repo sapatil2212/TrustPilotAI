@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   Menu,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,14 +42,17 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const NavContent = () => (
+  const NavContent = ({ isMobile = false }: { isMobile?: boolean }) => (
     <>
-      <div className="flex h-16 items-center px-6 border-b">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-trust-blue to-blue-400 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">TP</span>
+      <div className={cn(
+        "flex h-16 items-center px-6 border-b",
+        isMobile ? "border-gray-200 dark:border-gray-800" : "border-border"
+      )}>
+        <Link href="/dashboard" className="flex items-center gap-2.5" onClick={() => setIsOpen(false)}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Star className="w-5 h-5 text-white fill-white" />
           </div>
-          <span className="font-semibold text-lg">TrustPilotAI</span>
+          <span className="font-semibold text-lg tracking-tight">TrustPilotAI</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 py-4">
@@ -62,13 +66,13 @@ export function Sidebar({ className }: SidebarProps) {
                 href={item.href}
                 onClick={() => setIsOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={cn("w-5 h-5", isActive ? "text-white" : "")} />
                 {item.name}
               </Link>
             );
@@ -86,13 +90,13 @@ export function Sidebar({ className }: SidebarProps) {
                 href={item.href}
                 onClick={() => setIsOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={cn("w-5 h-5", isActive ? "text-white" : "")} />
                 {item.name}
               </Link>
             );
@@ -107,14 +111,18 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Mobile Sidebar */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger className="lg:hidden">
-          <Button variant="ghost" size="icon" className="lg:hidden">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="lg:hidden rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle sidebar</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
+        <SheetContent side="left" className="w-72 p-0 bg-white dark:bg-[#0f0f14] border-r border-gray-200 dark:border-gray-800">
           <div className="flex flex-col h-full">
-            <NavContent />
+            <NavContent isMobile />
           </div>
         </SheetContent>
       </Sheet>
@@ -122,7 +130,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col w-64 border-r bg-background h-screen sticky top-0",
+          "hidden lg:flex flex-col w-72 border-r bg-white dark:bg-[#0f0f14] h-screen sticky top-0",
           className
         )}
       >

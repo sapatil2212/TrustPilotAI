@@ -294,6 +294,19 @@ export function Navbar() {
                     
                     {/* Mobile Footer */}
                     <div className={`p-4 border-t ${isDark ? "border-gray-800" : "border-gray-200"}`}>
+                      {/* Mobile Theme Toggle */}
+                      <div className="flex items-center justify-between mb-4 px-2">
+                        <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>Theme</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setTheme(isDark ? "light" : "dark")}
+                          className={`rounded-lg ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-100 text-gray-600"}`}
+                        >
+                          {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                          {isDark ? "Light Mode" : "Dark Mode"}
+                        </Button>
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                           <Button 

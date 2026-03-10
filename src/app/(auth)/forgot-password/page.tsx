@@ -28,27 +28,27 @@ export default function ForgotPasswordPage() {
   if (isSubmitted) {
     return (
       <div className="text-center space-y-6">
-        <div className="w-16 h-16 rounded-full bg-trust-green/10 flex items-center justify-center mx-auto">
-          <CheckCircle className="w-8 h-8 text-trust-green" />
+        <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto">
+          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Check your email</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Check your email</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
             We&apos;ve sent a password reset link to{" "}
-            <span className="font-medium text-foreground">{email}</span>
+            <span className="font-medium text-gray-900 dark:text-white">{email}</span>
           </p>
         </div>
         <div className="space-y-3">
           <Button
             variant="outline"
-            className="w-full rounded-full"
+            className="w-full rounded-xl h-11 border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             onClick={() => setIsSubmitted(false)}
           >
             Try another email
           </Button>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Remember your password?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
               Sign in
             </Link>
           </p>
@@ -60,15 +60,15 @@ export default function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Forgot password?</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot password?</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">
           No worries, we&apos;ll send you reset instructions
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</Label>
           <Input
             id="email"
             type="email"
@@ -76,13 +76,13 @@ export default function ForgotPasswordPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="rounded-lg"
+            className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
           />
         </div>
 
         <Button
           type="submit"
-          className="w-full rounded-full"
+          className="w-full h-11 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-medium"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -96,9 +96,9 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-gray-500 dark:text-gray-400">
         Remember your password?{" "}
-        <Link href="/login" className="text-primary hover:underline">
+        <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
           Sign in
         </Link>
       </p>

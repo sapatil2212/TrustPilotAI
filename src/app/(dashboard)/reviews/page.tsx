@@ -25,6 +25,7 @@ import { MessageSquare, Search, Sparkles, Reply, CheckCircle } from "lucide-reac
 import { MOCK_REVIEWS } from "@/lib/constants";
 import { Review } from "@/types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const AI_REPLY_TEMPLATES = {
   professional: "Thank you for your feedback. We appreciate your business and are committed to providing excellent service.",
@@ -84,28 +85,28 @@ export default function ReviewsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reviews</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Reviews</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
             Monitor and respond to customer reviews
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             placeholder="Search reviews..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 rounded-lg"
+            className="pl-10 rounded-xl h-11 border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
           />
         </div>
         <Select value={ratingFilter} onValueChange={(v) => setRatingFilter(v || "all")}>
-          <SelectTrigger className="w-[140px] rounded-lg">
+          <SelectTrigger className="w-full sm:w-[140px] rounded-xl h-11 border-gray-200 dark:border-gray-700">
             <SelectValue placeholder="Rating" />
           </SelectTrigger>
           <SelectContent>
@@ -118,7 +119,7 @@ export default function ReviewsPage() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
-          <SelectTrigger className="w-[140px] rounded-lg">
+          <SelectTrigger className="w-full sm:w-[140px] rounded-xl h-11 border-gray-200 dark:border-gray-700">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -137,22 +138,28 @@ export default function ReviewsPage() {
           description="Reviews will appear here once customers start leaving them"
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredReviews.map((review) => (
-            <Card key={review.id} className="hover:shadow-saas-sm transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
+            <Card key={review.id} className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f] hover:shadow-soft-lg transition-all duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <Avatar className="h-9 w-9 sm:h-10 sm:w-10 shrink-0">
+                    <AvatarFallback className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm font-medium">
                       {review.reviewerAvatar}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{review.reviewerName}</span>
+                      <span className="font-medium text-gray-900 dark:text-white text-sm">{review.reviewerName}</span>
                       <StarRating rating={review.rating} size="sm" />
                       <Badge
                         variant={review.status === "replied" ? "secondary" : "outline"}
+                        className={cn(
+                          "text-xs border-0",
+                          review.status === "replied" 
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                        )}
                       >
                         {review.status === "replied" ? (
                           <CheckCircle className="w-3 h-3 mr-1" />
@@ -160,14 +167,14 @@ export default function ReviewsPage() {
                         {review.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       {new Date(review.createdAt).toLocaleDateString()}
                     </p>
-                    <p className="mt-3 text-foreground">{review.text}</p>
+                    <p className="mt-2 sm:mt-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">{review.text}</p>
                     {review.reply && (
-                      <div className="mt-4 p-4 bg-muted rounded-lg">
-                        <p className="text-sm font-medium mb-1">Your Reply:</p>
-                        <p className="text-sm text-muted-foreground">{review.reply}</p>
+                      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-800">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Your Reply:</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{review.reply}</p>
                       </div>
                     )}
                   </div>
@@ -178,9 +185,9 @@ export default function ReviewsPage() {
                         setSelectedReview(review);
                         generateAIReply(review);
                       }}
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25"
                     >
-                      <Sparkles className="w-4 h-4 mr-1" />
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                       AI Reply
                     </Button>
                   )}

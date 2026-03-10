@@ -30,7 +30,7 @@ export default function GoogleWorkspacePage() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+      <section className="relative pt-28 sm:pt-32 pb-16 sm:pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-[#0f0f14] dark:to-[#0f0f14]" />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,9 +40,9 @@ export default function GoogleWorkspacePage() {
               Productivity Suite
             </Badge>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-gray-900 dark:text-white mb-6 leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-semibold tracking-tight text-gray-900 dark:text-white mb-6 leading-[1.1]">
               Google Workspace
-              <br />
+              <br className="hidden sm:block" />
               <span className="gradient-text">Solutions</span>
             </h1>
             

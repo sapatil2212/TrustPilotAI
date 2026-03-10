@@ -61,16 +61,16 @@ export default function AuthLayout({
       </div>
 
       {/* Right Side - Auth Form */}
-      <div className="flex-1 flex flex-col">
-        <div className="lg:hidden p-6 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="lg:hidden p-4 sm:p-6 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <Star className="w-4 h-4 text-white fill-white" />
             </div>
-            <span className="font-semibold text-lg tracking-tight">TrustPilotAI</span>
+            <span className="font-semibold text-lg tracking-tight dark:text-white">TrustPilotAI</span>
           </Link>
         </div>
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 py-8">
           <div className="w-full max-w-sm">
             {children}
           </div>

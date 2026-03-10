@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import { MOCK_REVIEWS } from "@/lib/constants";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 const reviewTrendData = [
   { date: "Mon", count: 4 },
@@ -51,15 +52,16 @@ const ratingDistribution = [
 export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
             Welcome back! Here&apos;s what&apos;s happening with your reviews.
           </p>
         </div>
         <Link href="/reviews">
-          <Button className="rounded-full gap-2">
+          <Button className="rounded-xl gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 h-11">
             <Sparkles className="w-4 h-4" />
             Generate AI Reply
           </Button>
@@ -103,37 +105,45 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Review Growth Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Growth</CardTitle>
+        <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Review Growth</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[280px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={reviewTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-800" />
                   <XAxis
                     dataKey="date"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#9ca3af"
                     fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
                   />
                   <YAxis
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#9ca3af"
                     fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
+                      backgroundColor: "#1f2937",
+                      border: "none",
+                      borderRadius: "12px",
+                      color: "#fff",
+                      padding: "12px",
                     }}
+                    itemStyle={{ color: "#fff" }}
                   />
                   <Line
                     type="monotone"
                     dataKey="count"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
+                    stroke="#6366f1"
+                    strokeWidth={3}
+                    dot={{ fill: "#6366f1", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -142,21 +152,21 @@ export default function DashboardPage() {
         </Card>
 
         {/* Rating Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Rating Distribution</CardTitle>
+        <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Rating Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[240px] sm:h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={ratingDistribution}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {ratingDistribution.map((entry, index) => (
@@ -165,22 +175,24 @@ export default function DashboardPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
+                      backgroundColor: "#1f2937",
+                      border: "none",
+                      borderRadius: "12px",
+                      color: "#fff",
+                      padding: "12px",
                     }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-4">
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-4">
               {ratingDistribution.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
+                <div key={item.name} className="flex items-center gap-1.5">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     {item.name}
                   </span>
                 </div>
@@ -191,49 +203,54 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Reviews */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Reviews</CardTitle>
+      <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Recent Reviews</CardTitle>
           <Link href="/reviews">
-            <Button variant="ghost" size="sm" className="gap-1">
+            <Button variant="ghost" size="sm" className="gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
               View All
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {MOCK_REVIEWS.slice(0, 4).map((review) => (
               <div
                 key={review.id}
-                className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                <Avatar className="h-9 w-9 sm:h-10 sm:w-10 shrink-0">
+                  <AvatarFallback className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm font-medium">
                     {review.reviewerAvatar}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium">{review.reviewerName}</span>
+                    <span className="font-medium text-gray-900 dark:text-white text-sm">{review.reviewerName}</span>
                     <StarRating rating={review.rating} size="sm" />
                     <Badge
                       variant={review.status === "replied" ? "secondary" : "outline"}
-                      className="text-xs"
+                      className={cn(
+                        "text-xs",
+                        review.status === "replied" 
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0" 
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0"
+                      )}
                     >
                       {review.status === "replied" ? "Replied" : "Pending"}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                     {review.text}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     {new Date(review.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 {review.status === "pending" && (
-                  <Button size="sm" variant="outline" className="shrink-0">
-                    <Sparkles className="w-4 h-4 mr-1" />
+                  <Button size="sm" variant="outline" className="shrink-0 rounded-lg border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-indigo-800">
+                    <Sparkles className="w-3.5 h-3.5 mr-1" />
                     Reply
                   </Button>
                 )}

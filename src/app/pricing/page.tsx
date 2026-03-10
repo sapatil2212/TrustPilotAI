@@ -123,13 +123,13 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="py-12 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl p-8 transition-all duration-300 ${
+                className={`relative rounded-2xl p-6 sm:p-8 transition-all duration-300 ${
                   plan.popular
-                    ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-2xl scale-105"
+                    ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-2xl lg:scale-105"
                     : "bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-soft-lg"
                 }`}
               >

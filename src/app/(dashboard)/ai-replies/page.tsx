@@ -58,29 +58,29 @@ export default function AIRepliesPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">AI Replies</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">AI Replies</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
           Generate professional replies to customer reviews using AI
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Input Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Original Review</CardTitle>
+        <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Original Review</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
               placeholder="Paste the customer review here..."
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              className="min-h-[200px] resize-none rounded-lg"
+              className="min-h-[180px] sm:min-h-[200px] resize-none rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
             />
             <div className="space-y-2">
-              <label className="text-sm font-medium">Reply Tone</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Reply Tone</label>
               <Select value={tone} onValueChange={(v) => setTone(v || "professional")}>
-                <SelectTrigger className="rounded-lg">
+                <SelectTrigger className="rounded-xl h-11 border-gray-200 dark:border-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -88,7 +88,7 @@ export default function AIRepliesPage() {
                     <SelectItem key={t.value} value={t.value}>
                       <div>
                         <div className="font-medium">{t.label}</div>
-                        <div className="text-xs text-muted-foreground">{t.description}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{t.description}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -98,7 +98,7 @@ export default function AIRepliesPage() {
             <Button
               onClick={generateReply}
               disabled={isGenerating || !review.trim()}
-              className="w-full rounded-full gap-2"
+              className="w-full rounded-xl gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 h-11"
             >
               {isGenerating ? (
                 <>
@@ -116,13 +116,13 @@ export default function AIRepliesPage() {
         </Card>
 
         {/* Output Section */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>AI Generated Reply</CardTitle>
+        <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">AI Generated Reply</CardTitle>
             {generatedReply && (
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={handleCopy} className="rounded-full">
-                  <Copy className="w-4 h-4 mr-1" />
+                <Button variant="ghost" size="sm" onClick={handleCopy} className="rounded-lg text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+                  <Copy className="w-4 h-4 mr-1.5" />
                   Copy
                 </Button>
               </div>
@@ -131,16 +131,16 @@ export default function AIRepliesPage() {
           <CardContent className="space-y-4">
             {generatedReply ? (
               <>
-                <div className="p-4 bg-muted rounded-lg min-h-[200px]">
-                  <p className="text-foreground leading-relaxed">{generatedReply}</p>
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[180px] sm:min-h-[200px]">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{generatedReply}</p>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="rounded-full gap-1">
+                    <Button variant="outline" size="sm" className="rounded-lg gap-1.5 flex-1 sm:flex-none border-gray-200 dark:border-gray-700 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 hover:border-green-200 dark:hover:border-green-800">
                       <ThumbsUp className="w-4 h-4" />
                       Helpful
                     </Button>
-                    <Button variant="outline" size="sm" className="rounded-full gap-1">
+                    <Button variant="outline" size="sm" className="rounded-lg gap-1.5 flex-1 sm:flex-none border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-800">
                       <ThumbsDown className="w-4 h-4" />
                       Not helpful
                     </Button>
@@ -150,7 +150,7 @@ export default function AIRepliesPage() {
                     size="sm"
                     onClick={generateReply}
                     disabled={isGenerating}
-                    className="rounded-full gap-1"
+                    className="rounded-lg gap-1.5 border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-indigo-800"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Regenerate
@@ -158,9 +158,11 @@ export default function AIRepliesPage() {
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center min-h-[200px] text-muted-foreground">
-                <Sparkles className="w-12 h-12 mb-4 opacity-50" />
-                <p>Enter a review and click Generate to see AI reply</p>
+              <div className="flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] text-gray-400 dark:text-gray-500">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-indigo-500/50" />
+                </div>
+                <p className="text-sm">Enter a review and click Generate to see AI reply</p>
               </div>
             )}
           </CardContent>
@@ -168,12 +170,12 @@ export default function AIRepliesPage() {
       </div>
 
       {/* Tips Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tips for Better AI Replies</CardTitle>
+      <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Tips for Better AI Replies</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {[
               { title: "Be Specific", desc: "Include specific details from the review in your response" },
               { title: "Stay Professional", desc: "Maintain a courteous tone even with negative reviews" },
@@ -181,12 +183,12 @@ export default function AIRepliesPage() {
               { title: "Take Action", desc: "Mention any steps you're taking to address concerns" },
             ].map((tip) => (
               <div key={tip.title} className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-primary text-xs font-bold">✓</span>
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-indigo-600 dark:text-indigo-400 text-xs font-bold">✓</span>
                 </div>
                 <div>
-                  <h4 className="font-medium">{tip.title}</h4>
-                  <p className="text-sm text-muted-foreground">{tip.desc}</p>
+                  <h4 className="font-medium text-gray-900 dark:text-white">{tip.title}</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{tip.desc}</p>
                 </div>
               </div>
             ))}
