@@ -17,7 +17,8 @@ const plans = [
   {
     name: "Starter",
     description: "Perfect for small businesses getting started",
-    price: "29",
+    price: "499",
+    currency: "₹",
     period: "/month",
     features: [
       "1 Business Location",
@@ -33,7 +34,8 @@ const plans = [
   {
     name: "Growth",
     description: "For growing businesses with multiple locations",
-    price: "79",
+    price: "1,499",
+    currency: "₹",
     period: "/month",
     features: [
       "5 Business Locations",
@@ -51,8 +53,9 @@ const plans = [
   {
     name: "Enterprise",
     description: "For large organizations with custom needs",
-    price: "199",
-    period: "/month",
+    price: "Custom",
+    currency: "",
+    period: "",
     features: [
       "Unlimited Locations",
       "Unlimited Reviews",
@@ -149,7 +152,7 @@ export default function PricingPage() {
                 
                 <div className="mb-6">
                   <span className={`text-4xl font-bold ${plan.popular ? "text-white" : "text-gray-900 dark:text-white"}`}>
-                    ${plan.price}
+                    {plan.currency}{plan.price}
                   </span>
                   <span className={plan.popular ? "text-indigo-200" : "text-gray-500 dark:text-gray-400"}>
                     {plan.period}
