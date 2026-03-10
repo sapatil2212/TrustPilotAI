@@ -1,8 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(dashboard)/qr-codes/page": "app/(dashboard)/qr-codes/page.js",
-  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
-  "/(dashboard)/reviews/page": "app/(dashboard)/reviews/page.js",
-  "/(landing)/pricing/page": "app/(landing)/pricing/page.js"
-}
