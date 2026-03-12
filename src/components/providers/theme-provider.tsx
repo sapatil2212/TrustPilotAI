@@ -1,13 +1,14 @@
 "use client";
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { SessionProvider } from "next-auth/react";
 import { type ReactNode } from "react";
 
-interface ThemeProviderProps {
+interface ProvidersProps {
   children: ReactNode;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ children }: ProvidersProps) {
   return (
     <NextThemesProvider
       attribute="class"
@@ -17,5 +18,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     >
       {children}
     </NextThemesProvider>
+  );
+}
+
+export function Providers({ children }: ProvidersProps) {
+  return (
+    <SessionProvider>
+      <ThemeProvider>
+        {children}
+      </ThemeProvider>
+    </SessionProvider>
   );
 }

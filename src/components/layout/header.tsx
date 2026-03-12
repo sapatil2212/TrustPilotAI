@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -14,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sidebar } from "./sidebar";
 import { TrialBadge } from "@/components/trial/trial-badge";
 import { useTheme } from "next-themes";
-import { useAuthStore } from "@/lib/store/auth-store";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -24,13 +25,13 @@ interface HeaderProps {
 
 export function Header({ className }: HeaderProps) {
   const { setTheme, resolvedTheme } = useTheme();
-  const { user, logout } = useAuthStore();
+  const { data: session } = useSession();
   const router = useRouter();
   const isDark = resolvedTheme === "dark";
+  const user = session?.user;
 
   const handleLogout = () => {
-    logout();
-    router.push("/login");
+    signOut({ callbackUrl: "/login" });
   };
 
   return (
@@ -42,7 +43,10 @@ export function Header({ className }: HeaderProps) {
       className
     )}>
       <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <Sidebar />
+        {/* Only show mobile sidebar trigger */}
+        <div className="lg:hidden">
+          <Sidebar />
+        </div>
         
         <div className="flex-1" />
         
@@ -93,7 +97,7 @@ export function Header({ className }: HeaderProps) {
                 )}
               >
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src={user?.avatar} alt={user?.name} />
+                  <AvatarImage src="" alt={user?.name || "User"} />
                   <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-medium">
                     {user?.name?.charAt(0) || "U"}
                   </AvatarFallback>
@@ -111,28 +115,34 @@ export function Header({ className }: HeaderProps) {
               )} 
               align="end"
             >
-              <DropdownMenuLabel className={isDark ? "text-gray-300" : ""}>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user?.name || "User"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
-                </div>
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className={isDark ? "text-gray-300" : ""}>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{user?.name || "User"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || "user@example.com"}</p>
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator className={isDark ? "bg-gray-800" : ""} />
-              <DropdownMenuItem onClick={() => router.push("/settings/profile")} className={cn("cursor-pointer", isDark ? "text-gray-300 focus:bg-gray-800" : "")}>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/settings/billing")} className={cn("cursor-pointer", isDark ? "text-gray-300 focus:bg-gray-800" : "")}>
-                <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                Billing
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => router.push("/settings/profile")} className={cn("cursor-pointer", isDark ? "text-gray-300 focus:bg-gray-800" : "")}>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/settings/billing")} className={cn("cursor-pointer", isDark ? "text-gray-300 focus:bg-gray-800" : "")}>
+                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Billing
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator className={isDark ? "bg-gray-800" : ""} />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500">
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

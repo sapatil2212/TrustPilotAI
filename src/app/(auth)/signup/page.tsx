@@ -3,217 +3,470 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { useAuthStore } from "@/lib/store/auth-store";
-import { useTrialStore } from "@/lib/store/trial-store";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
+
+const BUSINESS_TYPES = [
+  { value: "RESTAURANT", label: "Restaurant / Food Service" },
+  { value: "RETAIL", label: "Retail Store" },
+  { value: "HEALTHCARE", label: "Healthcare / Medical" },
+  { value: "PROFESSIONAL_SERVICES", label: "Professional Services" },
+  { value: "HOME_SERVICES", label: "Home Services" },
+  { value: "AUTOMOTIVE", label: "Automotive" },
+  { value: "BEAUTY_WELLNESS", label: "Beauty & Wellness" },
+  { value: "FITNESS", label: "Fitness / Gym" },
+  { value: "EDUCATION", label: "Education" },
+  { value: "HOSPITALITY", label: "Hospitality / Hotel" },
+  { value: "REAL_ESTATE", label: "Real Estate" },
+  { value: "TECHNOLOGY", label: "Technology / IT" },
+  { value: "OTHER", label: "Other" },
+];
+
+type Step = "email" | "verify" | "details";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { login } = useAuthStore();
-  const { startTrial } = useTrialStore();
+  const [step, setStep] = useState<Step>("email");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    businessName: "",
+    businessType: "",
     agreeTerms: false,
   });
+  const [otp, setOtp] = useState("");
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [error, setError] = useState("");
 
+  // Step 1: Send OTP
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to send OTP");
+        toast.error(data.error || "Failed to send OTP");
+        return;
+      }
+
+      toast.success("OTP sent to your email!");
+      setStep("verify");
+    } catch (err) {
+      console.error("Send OTP error:", err);
+      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Step 2: Verify OTP
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, otp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Invalid OTP");
+        toast.error(data.error || "Invalid OTP");
+        return;
+      }
+
+      setIsEmailVerified(true);
+      toast.success("Email verified successfully!");
+      setStep("details");
+    } catch (err) {
+      console.error("Verify OTP error:", err);
+      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Step 3: Complete signup
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (!formData.agreeTerms) {
       toast.error("Please agree to the terms and conditions");
       return;
     }
 
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters");
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    if (!formData.businessType) {
+      setError("Please select a business type");
+      toast.error("Please select a business type");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          businessName: formData.businessName,
+          businessType: formData.businessType,
+        }),
+      });
 
-    // Mock signup
-    login({
-      id: "1",
-      email: formData.email,
-      name: formData.name,
-      role: "owner",
-      createdAt: new Date(),
-    });
+      const data = await response.json();
 
-    // Start trial
-    startTrial("growth");
+      if (!response.ok) {
+        setError(data.error || "Signup failed");
+        toast.error(data.error || "Signup failed");
+        setIsLoading(false);
+        return;
+      }
 
-    toast.success("Account created! Your 14-day trial has started.");
-    router.push("/dashboard");
-    setIsLoading(false);
+      // Auto-login after signup
+      const signInResult = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        toast.error("Account created but login failed. Please login manually.");
+        router.push("/login");
+        return;
+      }
+
+      toast.success("Account created! Your 14-day trial has started.");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    login({
-      id: "2",
-      email: "google@example.com",
-      name: "Google User",
-      role: "owner",
-      createdAt: new Date(),
-    });
-    
-    startTrial("growth");
-    toast.success("Account created! Your 14-day trial has started.");
-    router.push("/dashboard");
-    setIsLoading(false);
-  };
+  const renderStepIndicator = () => (
+    <div className="flex items-center justify-center gap-2 mb-6">
+      {["email", "verify", "details"].map((s, i) => (
+        <div key={s} className="flex items-center">
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+              step === s
+                ? "bg-indigo-600 text-white"
+                : ["email", "verify", "details"].indexOf(step) > i
+                ? "bg-green-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+            }`}
+          >
+            {["email", "verify", "details"].indexOf(step) > i ? (
+              <CheckCircle className="w-4 h-4" />
+            ) : (
+              i + 1
+            )}
+          </div>
+          {i < 2 && (
+            <div
+              className={`w-12 h-0.5 mx-1 ${
+                ["email", "verify", "details"].indexOf(step) > i
+                  ? "bg-green-500"
+                  : "bg-gray-200 dark:bg-gray-700"
+              }`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Create your account</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+          {step === "email" && "Create your account"}
+          {step === "verify" && "Verify your email"}
+          {step === "details" && "Complete your profile"}
+        </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-          Start your 14-day free trial today
+          {step === "email" && "Start your 14-day free trial today"}
+          {step === "verify" && `Enter the OTP sent to ${formData.email}`}
+          {step === "details" && "Just a few more details to get started"}
         </p>
       </div>
 
-      <Button
-        variant="outline"
-        className="w-full h-11 rounded-xl border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-        onClick={handleGoogleSignup}
-        disabled={isLoading}
-      >
-        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-          <path
-            fill="currentColor"
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-          />
-          <path
-            fill="currentColor"
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-          />
-          <path
-            fill="currentColor"
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-          />
-          <path
-            fill="currentColor"
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-          />
-        </svg>
-        Continue with Google
-      </Button>
+      {renderStepIndicator()}
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator className="bg-gray-200 dark:bg-gray-700" />
+      {error && (
+        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-white dark:bg-[#0f0f14] px-3 text-gray-500">
-            Or continue with email
-          </span>
-        </div>
-      </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="John Doe"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-            className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@company.com"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-            className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a strong password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              required
-              className="h-11 rounded-xl border-gray-200 dark:border-gray-700 pr-10 focus:border-indigo-500 focus:ring-indigo-500"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
+      {/* Step 1: Email Input */}
+      {step === "email" && (
+        <form onSubmit={handleSendOtp} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email Address
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@company.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                className="h-11 pl-10 rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Must be at least 8 characters long
-          </p>
-        </div>
 
-        <div className="flex items-start space-x-2">
-          <Checkbox
-            id="terms"
-            checked={formData.agreeTerms}
-            onCheckedChange={(checked) =>
-              setFormData({ ...formData, agreeTerms: checked as boolean })
-            }
-            className="rounded border-gray-300 dark:border-gray-600 mt-0.5"
-          />
-          <Label htmlFor="terms" className="text-sm font-normal leading-relaxed text-gray-600 dark:text-gray-400">
-            I agree to the{" "}
-            <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
-              Privacy Policy
-            </Link>
-          </Label>
-        </div>
+          <Button
+            type="submit"
+            className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Sending OTP...
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </form>
+      )}
 
-        <Button
-          type="submit"
-          className="w-full h-11 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-medium"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </Button>
-      </form>
+      {/* Step 2: OTP Verification */}
+      {step === "verify" && (
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="otp" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Enter OTP
+            </Label>
+            <Input
+              id="otp"
+              type="text"
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              maxLength={6}
+              required
+              className="h-14 text-center text-2xl tracking-[0.5em] rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 font-mono"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Didn't receive the code?{" "}
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                className="text-indigo-600 hover:text-indigo-500 font-medium"
+                disabled={isLoading}
+              >
+                Resend OTP
+              </button>
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 h-11 rounded-xl"
+              onClick={() => setStep("email")}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+              disabled={isLoading || otp.length !== 6}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Verify Email"
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 3: Profile Details */}
+      {step === "details" && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <p className="text-sm text-green-600 dark:text-green-400">
+              Email verified: {formData.email}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Your Name
+            </Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+              className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="businessName" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Business Name
+            </Label>
+            <Input
+              id="businessName"
+              type="text"
+              placeholder="My Awesome Business"
+              value={formData.businessName}
+              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+              required
+              className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="businessType" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Business Type
+            </Label>
+            <Select
+              value={formData.businessType || undefined}
+              onValueChange={(value) => value && setFormData({ ...formData, businessType: value })}
+            >
+              <SelectTrigger className="h-11 rounded-xl border-gray-200 dark:border-gray-700">
+                <SelectValue placeholder="Select your business type" />
+              </SelectTrigger>
+              <SelectContent>
+                {BUSINESS_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Password
+            </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a strong password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                className="h-11 rounded-xl border-gray-200 dark:border-gray-700 pr-10 focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Must be at least 8 characters with uppercase, lowercase, and number
+            </p>
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <Checkbox
+              id="terms"
+              checked={formData.agreeTerms}
+              onCheckedChange={(checked) => setFormData({ ...formData, agreeTerms: checked as boolean })}
+              className="rounded border-gray-300 dark:border-gray-600 mt-0.5"
+            />
+            <Label htmlFor="terms" className="text-sm font-normal leading-relaxed text-gray-600 dark:text-gray-400">
+              I agree to the{" "}
+              <Link href="/terms" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
+                Privacy Policy
+              </Link>
+            </Label>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create Account & Start Trial"
+            )}
+          </Button>
+        </form>
+      )}
 
       <p className="text-center text-sm text-gray-500 dark:text-gray-400">
         Already have an account?{" "}

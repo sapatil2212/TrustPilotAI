@@ -1,0 +1,345 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  password        String
+  role            Role           @default(USER)
+  isEmailVerified Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  trialEndsAt     DateTime
+  isTrialExpired  Boolean        @default(false)
+  isActive        Boolean        @default(true)
+  
+  // Relations
+  businesses      Business[]
+  notifications   Notification[]
+  
+  @@index([email])
+  @@index([isTrialExpired])
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([email])
+  @@index([otp])
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+enum BusinessType {
+  RESTAURANT
+  RETAIL
+  HEALTHCARE
+  PROFESSIONAL_SERVICES
+  HOME_SERVICES
+  AUTOMOTIVE
+  BEAUTY_WELLNESS
+  FITNESS
+  EDUCATION
+  HOSPITALITY
+  REAL_ESTATE
+  TECHNOLOGY
+  OTHER
+}
+
+model Business {
+  id              String       @id @default(uuid())
+  userId          String
+  businessName    String
+  businessType    BusinessType @default(OTHER)
+  placeId         String?
+  reviewLink      String?      @db.Text
+  qrCodeUrl       String?      @db.Text
+  isConnected     Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  lastSyncAt      DateTime?
+  
+  // Cached stats
+  totalReviews    Int          @default(0)
+  averageRating   Float        @default(0)
+  
+  // Future Google API fields
+  googleAccountId String?
+  locationId      String?
+  accessToken     String?      @db.Text
+  refreshToken    String?      @db.Text
+  
+  // Relations
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews               Review[]
+  reviewFunnelSessions  ReviewFunnelSession[]
+  analytics             ReviewAnalytics?
+  
+  @@index([userId])
+  @@index([placeId])
+}
+
+model Review {
+  id                  String    @id @default(uuid())
+  businessId          String
+  reviewerName        String
+  reviewerAvatar      String?   @db.Text
+  rating              Int
+  reviewText          String?   @db.Text
+  reviewDate          DateTime
+  reviewHash          String    @unique // For duplicate detection
+  sentiment           Sentiment @default(NEUTRAL)
+  aiReplySuggestion   String?   @db.Text
+  aiReplyGeneratedAt  DateTime?
+  isReplied           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  // Relations
+  business          Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@index([businessId])
+  @@index([reviewDate])
+  @@index([rating])
+  @@index([sentiment])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  message   String           @db.Text
+  type      NotificationType @default(GENERAL)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  
+  // Relations
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+}
+
+enum NotificationType {
+  GENERAL
+  NEW_REVIEW
+  TRIAL_EXPIRY_WARNING
+  AI_REPLY_READY
+}
+
+model ReviewFunnelSession {
+  id                 String   @id @default(uuid())
+  businessId         String
+  ratingSelected     Int?
+  aiReviewGenerated  String?  @db.Text
+  redirectedToGoogle Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  
+  // Relations
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@index([businessId])
+  @@index([createdAt])
+}
+
+model ReviewAnalytics {
+  id            String   @id @default(uuid())
+  businessId    String   @unique
+  totalReviews  Int      @default(0)
+  positiveCount Int      @default(0)
+  negativeCount Int      @default(0)
+  neutralCount  Int      @default(0)
+  averageRating Float    @default(0)
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model SystemStats {
+  id               String   @id @default(uuid())
+  date             DateTime @db.Date
+  aiRequestCount   Int      @default(0)
+  reviewFetchCount Int      @default(0)
+  qrScanCount      Int      @default(0)
+  apiCallCount     Int      @default(0)
+  createdAt        DateTime @default(now())
+  
+  @@unique([date])
+  @@index([date])
+}
+
+// Team Management
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  ownerId     String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  members     TeamMember[]
+  invites     TeamInvite[]
+  
+  @@index([ownerId])
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  role      TeamRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  
+  // Relations
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+model TeamInvite {
+  id           String       @id @default(uuid())
+  teamId       String
+  email        String
+  role         TeamRole     @default(MEMBER)
+  token        String       @unique
+  status       InviteStatus @default(PENDING)
+  invitedById  String
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  
+  // Relations
+  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@index([teamId])
+  @@index([email])
+  @@index([token])
+}
+
+// Webhooks
+enum WebhookEvent {
+  NEW_REVIEW
+  REVIEW_REPLIED
+  QR_SCAN
+  NEGATIVE_REVIEW
+  AI_REPLY_GENERATED
+}
+
+model Webhook {
+  id          String         @id @default(uuid())
+  userId      String
+  name        String
+  url         String         @db.Text
+  secret      String         // For signature verification
+  events      String         @db.Text // JSON array of WebhookEvent
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  lastTriggeredAt DateTime?
+  failureCount    Int        @default(0)
+  
+  // Relations
+  logs        WebhookLog[]
+  
+  @@index([userId])
+  @@index([isActive])
+}
+
+model WebhookLog {
+  id           String   @id @default(uuid())
+  webhookId    String
+  event        String
+  payload      String   @db.Text
+  statusCode   Int?
+  response     String?  @db.Text
+  success      Boolean  @default(false)
+  errorMessage String?  @db.Text
+  createdAt    DateTime @default(now())
+  
+  // Relations
+  webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  
+  @@index([webhookId])
+  @@index([createdAt])
+}
+
+// API Keys
+model ApiKey {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  key         String    @unique // Hashed API key
+  keyPrefix   String    // First 8 chars for identification (e.g., "tpai_xxxx")
+  permissions String    @db.Text // JSON array of permissions
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([key])
+  @@index([keyPrefix])
+}
+
+// Slack Integration
+model SlackIntegration {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  teamId          String   // Slack team ID
+  teamName        String
+  channelId       String?  // Default channel
+  channelName     String?
+  accessToken     String   @db.Text
+  botUserId       String?
+  webhookUrl      String?  @db.Text
+  notifyNewReview Boolean  @default(true)
+  notifyNegative  Boolean  @default(true)
+  notifyQrScan    Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+}

@@ -35,19 +35,38 @@ export default function AIRepliesPage() {
 
     setIsGenerating(true);
     
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    const replies: Record<string, string> = {
-      professional: "Thank you for taking the time to share your feedback. We truly appreciate your business and are committed to providing exceptional service. Your comments help us improve.",
-      friendly: "Thanks so much for your review! We're so happy you had a great experience with us. Hope to see you again soon!",
-      short: "Thank you for your feedback! We appreciate your support.",
-      detailed: "Thank you for your detailed review. We're delighted to hear about your positive experience with our team. We strive to provide excellent service to all our customers, and your feedback confirms we're on the right track. We look forward to serving you again.",
-    };
-    
-    setGeneratedReply(replies[tone]);
-    setIsGenerating(false);
-    toast.success("AI reply generated!");
+    try {
+      const response = await fetch('/api/ai/generate-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reviewText: review,
+          tone: tone,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedReply(data.reply || data.aiReplySuggestion || '');
+        toast.success("AI reply generated!");
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to generate reply");
+        // Fallback to local generation
+        const replies: Record<string, string> = {
+          professional: "Thank you for taking the time to share your feedback. We truly appreciate your business and are committed to providing exceptional service.",
+          friendly: "Thanks so much for your review! We're so happy you had a great experience with us. Hope to see you again soon!",
+          short: "Thank you for your feedback! We appreciate your support.",
+          detailed: "Thank you for your detailed review. We're delighted to hear about your positive experience. We strive to provide excellent service to all our customers.",
+        };
+        setGeneratedReply(replies[tone]);
+      }
+    } catch (error) {
+      console.error('Error generating reply:', error);
+      toast.error("Failed to generate reply");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopy = () => {

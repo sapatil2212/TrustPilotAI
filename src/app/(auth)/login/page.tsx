@@ -3,20 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { useAuthStore } from "@/lib/store/auth-store";
-import { useTrialStore } from "@/lib/store/trial-store";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuthStore();
-  const { startTrial } = useTrialStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,47 +21,52 @@ export default function LoginPage() {
     password: "",
     rememberMe: false,
   });
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
 
-    // Mock login
-    login({
-      id: "1",
-      email: formData.email,
-      name: "Demo User",
-      role: "owner",
-      createdAt: new Date(),
-    });
+      if (result?.error) {
+        setError(result.error);
+        toast.error(result.error);
+        setIsLoading(false);
+        return;
+      }
 
-    // Start trial if not already started
-    startTrial("growth");
-
-    toast.success("Welcome back!");
-    router.push("/dashboard");
-    setIsLoading(false);
+      if (result?.ok) {
+        toast.success("Welcome back!");
+        // Fetch user role and redirect accordingly
+        const response = await fetch("/api/auth/me");
+        const data = await response.json();
+        
+        if (data.user?.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
+        router.refresh();
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    login({
-      id: "2",
-      email: "google@example.com",
-      name: "Google User",
-      role: "owner",
-      createdAt: new Date(),
-    });
-    
-    startTrial("growth");
-    toast.success("Welcome!");
-    router.push("/dashboard");
-    setIsLoading(false);
+    // Google OAuth not yet implemented
+    toast.info("Google login coming soon!");
   };
 
   return (
@@ -115,6 +117,12 @@ export default function LoginPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
+        
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</Label>
           <Input

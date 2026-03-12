@@ -73,3 +73,96 @@ export interface AnalyticsData {
   sentimentData: { name: string; value: number }[];
   keywords: { word: string; count: number }[];
 }
+
+// New types for role-based dashboard
+
+export interface ReviewFunnelSession {
+  id: string;
+  businessId: string;
+  ratingSelected: number | null;
+  aiReviewGenerated: string | null;
+  redirectedToGoogle: boolean;
+  createdAt: Date;
+}
+
+export interface ReviewAnalytics {
+  id: string;
+  businessId: string;
+  totalReviews: number;
+  positiveCount: number;
+  negativeCount: number;
+  neutralCount: number;
+  averageRating: number;
+  updatedAt: Date;
+}
+
+export interface SystemStats {
+  id: string;
+  date: Date;
+  aiRequestCount: number;
+  reviewFetchCount: number;
+  qrScanCount: number;
+  apiCallCount: number;
+}
+
+export interface AdminOverview {
+  totalUsers: number;
+  totalBusinesses: number;
+  activeTrials: number;
+  expiredTrials: number;
+  totalReviewsFetched: number;
+}
+
+export interface AdminUserView {
+  id: string;
+  name: string;
+  email: string;
+  businessName: string | null;
+  trialEndsAt: Date;
+  trialStatus: 'active' | 'expired';
+  trialDaysRemaining: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface AdminBusinessView {
+  id: string;
+  businessName: string;
+  ownerName: string;
+  ownerEmail: string;
+  placeId: string;
+  totalReviews: number;
+  averageRating: number;
+  createdAt: Date;
+}
+
+export interface BusinessAnalytics {
+  totalReviews: number;
+  positiveReviews: number;
+  neutralReviews: number;
+  negativeReviews: number;
+  averageRating: number;
+  reviewTrend: { date: string; count: number }[];
+  ratingDistribution: { rating: number; count: number }[];
+  sentimentDistribution: { sentiment: string; count: number }[];
+}
+
+export interface FunnelStats {
+  totalSessions: number;
+  completedSessions: number;
+  conversionRate: number;
+  averageRating: number;
+  ratingDistribution: { rating: number; count: number }[];
+}
+
+export type NotificationType = 'GENERAL' | 'NEW_REVIEW' | 'TRIAL_EXPIRY_WARNING' | 'AI_REPLY_READY';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: Date;
+}

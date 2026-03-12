@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Users, CreditCard, Plug, Key } from "lucide-react";
+import { User, Users, CreditCard, Plug, Key, Webhook } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const settingsNav = [
@@ -10,6 +10,7 @@ const settingsNav = [
   { name: "Team Members", href: "/settings/team", icon: Users },
   { name: "Billing", href: "/settings/billing", icon: CreditCard },
   { name: "Integrations", href: "/settings/integrations", icon: Plug },
+  { name: "Webhooks", href: "/settings/webhooks", icon: Webhook },
   { name: "API Keys", href: "/settings/api-keys", icon: Key },
 ];
 
