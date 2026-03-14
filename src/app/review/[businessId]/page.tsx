@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Star, Loader2, Sparkles, Copy, ExternalLink, CheckCircle } from "lucide-react";
+import { Star, Loader2, Sparkles, Copy, ExternalLink, CheckCircle, ArrowRight, Building2, ThumbsUp, Edit3 } from "lucide-react";
 
 interface BusinessInfo {
   id: string;
@@ -33,16 +33,10 @@ export default function ReviewFunnelPage() {
   const [selectedReview, setSelectedReview] = useState("");
   const [generatingReviews, setGeneratingReviews] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isCustom, setIsCustom] = useState(false);
 
-  useEffect(() => {
-    if (businessId) {
-      fetchBusinessInfo();
-      createFunnelSession();
-    }
-  }, [businessId]);
-
-  const fetchBusinessInfo = async () => {
+  const fetchBusinessInfo = useCallback(async () => {
     try {
       const response = await fetch(`/api/review-funnel/${businessId}/info`);
       if (response.ok) {
@@ -57,9 +51,9 @@ export default function ReviewFunnelPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
 
-  const createFunnelSession = async () => {
+  const createFunnelSession = useCallback(async () => {
     try {
       const response = await fetch("/api/review-funnel/start", {
         method: "POST",
@@ -73,14 +67,21 @@ export default function ReviewFunnelPage() {
     } catch (error) {
       console.error("Error creating session:", error);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    if (businessId) {
+      fetchBusinessInfo();
+      createFunnelSession();
+    }
+  }, [businessId, fetchBusinessInfo, createFunnelSession]);
 
   const handleRatingSelect = async (rating: number) => {
     setSelectedRating(rating);
     
     // Update session with rating
     if (sessionId) {
-      await fetch(`/api/review-funnel/${sessionId}`, {
+      fetch(`/api/review-funnel/session/${sessionId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ratingSelected: rating }),
@@ -110,6 +111,10 @@ export default function ReviewFunnelPage() {
             text,
           }))
         );
+        // Auto-select the first suggestion
+        if (data.reviews.length > 0) {
+          setSelectedReview(data.reviews[0]);
+        }
       } else {
         toast.error("Failed to generate review suggestions");
       }
@@ -123,41 +128,90 @@ export default function ReviewFunnelPage() {
 
   const handleSelectSuggestion = (text: string) => {
     setSelectedReview(text);
+    setIsCustom(false);
   };
 
-  const handleCopyAndRedirect = async () => {
+  const handleCustomEdit = () => {
+    setIsCustom(true);
+  };
+
+  const handlePostReview = async () => {
     // Copy review to clipboard
-    await navigator.clipboard.writeText(selectedReview);
-    setCopied(true);
-    toast.success("Review copied to clipboard!");
+    try {
+      await navigator.clipboard.writeText(selectedReview);
+      setCopied(true);
+      toast.success("Review copied to clipboard!");
 
-    // Update session
-    if (sessionId) {
-      await fetch(`/api/review-funnel/${sessionId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          aiReviewGenerated: selectedReview,
-          redirectedToGoogle: true,
-        }),
-      });
-    }
+      // Update session
+      if (sessionId) {
+        fetch(`/api/review-funnel/session/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            aiReviewGenerated: selectedReview,
+            redirectedToGoogle: true,
+          }),
+        });
+      }
 
-    // Show success state briefly before redirect
-    setStep("success");
-    
-    // Redirect to Google review page after a short delay
-    setTimeout(() => {
+      // Show success state briefly before redirect
+      setStep("success");
+      
+      // Redirect to Google review page after a short delay
+      setTimeout(() => {
+        if (business?.reviewLink) {
+          window.location.href = business.reviewLink;
+        }
+      }, 2000);
+    } catch (error) {
+      console.error("Clipboard error:", error);
+      // Fallback: still redirect even if clipboard fails
       if (business?.reviewLink) {
         window.open(business.reviewLink, "_blank");
       }
-    }, 1500);
+    }
+  };
+
+  const getRatingLabel = (rating: number) => {
+    const labels = {
+      1: "Poor",
+      2: "Fair",
+      3: "Good",
+      4: "Great",
+      5: "Excellent",
+    };
+    return labels[rating as keyof typeof labels] || "";
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 animate-pulse">
+              <Star className="w-8 h-8 text-white fill-white" />
+            </div>
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 animate-ping opacity-20" />
+          </div>
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-indigo-600"
+                style={{
+                  animation: `bounce 1.4s ease-in-out ${i * 0.16}s infinite both`,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-gray-500">Loading...</p>
+        </div>
+        <style jsx>{`
+          @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -165,9 +219,12 @@ export default function ReviewFunnelPage() {
   if (!business) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <Card className="max-w-md w-full shadow-xl border-0">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Building2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
               Business Not Found
             </h2>
             <p className="text-gray-500 dark:text-gray-400">
@@ -184,8 +241,8 @@ export default function ReviewFunnelPage() {
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Star className="w-8 h-8 text-white fill-white" />
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-500/30">
+            <Star className="w-10 h-10 text-white fill-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {business.businessName}
@@ -195,115 +252,174 @@ export default function ReviewFunnelPage() {
           </p>
         </div>
 
+        {/* Progress Indicator */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+            step === "rating" ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-600"
+          }`}>
+            {step !== "rating" ? <CheckCircle className="w-5 h-5" /> : "1"}
+          </div>
+          <div className={`w-16 h-1 rounded transition-all ${step !== "rating" ? "bg-indigo-600" : "bg-gray-200"}`} />
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+            step === "review" ? "bg-indigo-600 text-white" : step === "success" ? "bg-indigo-100 text-indigo-600" : "bg-gray-200 text-gray-500"
+          }`}>
+            {step === "success" ? <CheckCircle className="w-5 h-5" /> : "2"}
+          </div>
+          <div className={`w-16 h-1 rounded transition-all ${step === "success" ? "bg-indigo-600" : "bg-gray-200"}`} />
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+            step === "success" ? "bg-green-600 text-white" : "bg-gray-200 text-gray-500"
+          }`}>
+            {step === "success" ? <CheckCircle className="w-5 h-5" /> : "3"}
+          </div>
+        </div>
+
         {/* Step 1: Rating Selection */}
         {step === "rating" && (
-          <Card className="shadow-xl border-0">
+          <Card className="shadow-xl border-0 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white text-center">
+              <h2 className="text-lg font-semibold">Rate Your Experience</h2>
+              <p className="text-sm text-white/80">Tap a star to get started</p>
+            </div>
             <CardContent className="pt-8 pb-8">
-              <h2 className="text-lg font-semibold text-center text-gray-900 dark:text-white mb-6">
-                How would you rate your experience?
-              </h2>
-              <div className="flex justify-center gap-2 mb-6">
+              <div className="flex justify-center gap-3 mb-6">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button
                     key={rating}
                     onMouseEnter={() => setHoveredRating(rating)}
                     onMouseLeave={() => setHoveredRating(0)}
                     onClick={() => handleRatingSelect(rating)}
-                    className="p-2 transition-transform hover:scale-110"
+                    className="p-2 transition-all hover:scale-125 active:scale-95"
                   >
                     <Star
-                      className={`w-10 h-10 transition-colors ${
+                      className={`w-12 h-12 transition-all drop-shadow-lg ${
                         rating <= (hoveredRating || selectedRating)
-                          ? "text-yellow-400 fill-yellow-400"
+                          ? "text-yellow-400 fill-yellow-400 scale-110"
                           : "text-gray-300 dark:text-gray-600"
                       }`}
                     />
                   </button>
                 ))}
               </div>
-              <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                Click a star to continue
-              </p>
+              {hoveredRating > 0 && (
+                <p className="text-center text-lg font-semibold text-indigo-600 animate-fade-in">
+                  {getRatingLabel(hoveredRating)}
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
 
         {/* Step 2: Review Generation */}
         {step === "review" && (
-          <Card className="shadow-xl border-0">
-            <CardContent className="pt-6 pb-6">
-              {/* Rating Display */}
-              <div className="flex justify-center gap-1 mb-4">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <Star
-                    key={rating}
-                    className={`w-6 h-6 ${
-                      rating <= selectedRating
-                        ? "text-yellow-400 fill-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
+          <Card className="shadow-xl border-0 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Your Review</h2>
+                  <p className="text-sm text-white/80">AI-generated for you</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <Star
+                      key={rating}
+                      className={`w-5 h-5 ${
+                        rating <= selectedRating
+                          ? "text-yellow-400 fill-yellow-400"
+                          : "text-white/30"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
-
+            </div>
+            <CardContent className="pt-6 pb-6">
               {generatingReviews ? (
-                <div className="text-center py-8">
-                  <Sparkles className="w-8 h-8 mx-auto mb-3 text-indigo-600 animate-pulse" />
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Generating personalized review suggestions...
+                <div className="text-center py-12">
+                  <div className="relative inline-block">
+                    <Sparkles className="w-12 h-12 text-indigo-600 animate-pulse" />
+                    <div className="absolute -inset-2 bg-indigo-600/20 rounded-full animate-ping" />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 mt-4 font-medium">
+                    Creating personalized reviews...
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Our AI is crafting the perfect review for you
                   </p>
                 </div>
               ) : (
                 <>
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Choose a review or write your own:
-                  </h3>
-                  
                   {/* AI Suggestions */}
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Choose a review:
+                      </p>
+                      <button
+                        onClick={handleCustomEdit}
+                        className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        Write custom
+                      </button>
+                    </div>
                     {suggestions.map((suggestion) => (
                       <button
                         key={suggestion.id}
                         onClick={() => handleSelectSuggestion(suggestion.text)}
-                        className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                          selectedReview === suggestion.text
-                            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
-                            : "border-gray-200 dark:border-gray-700 hover:border-indigo-300"
+                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                          selectedReview === suggestion.text && !isCustom
+                            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-md"
+                            : "border-gray-200 dark:border-gray-700 hover:border-indigo-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                         }`}
                       >
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {suggestion.text}
-                        </p>
+                        <div className="flex items-start gap-3">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                            selectedReview === suggestion.text && !isCustom
+                              ? "bg-indigo-600 text-white"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+                          }`}>
+                            {selectedReview === suggestion.text && !isCustom ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              <span className="text-xs">{suggestion.id}</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {suggestion.text}
+                          </p>
+                        </div>
                       </button>
                     ))}
                   </div>
 
                   {/* Custom Review */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Or write your own:
-                    </label>
-                    <Textarea
-                      value={selectedReview}
-                      onChange={(e) => setSelectedReview(e.target.value)}
-                      placeholder="Share your experience..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
+                  {isCustom && (
+                    <div className="space-y-2 mb-6 animate-fade-in">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Your custom review:
+                      </label>
+                      <Textarea
+                        value={selectedReview}
+                        onChange={(e) => setSelectedReview(e.target.value)}
+                        placeholder="Write your own review..."
+                        className="min-h-[120px] rounded-xl border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
 
-                  {/* Action Button */}
+                  {/* Post Button */}
                   <Button
-                    onClick={handleCopyAndRedirect}
+                    onClick={handlePostReview}
                     disabled={!selectedReview.trim()}
-                    className="w-full mt-4 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                    className="w-full h-14 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-base shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy & Post on Google
-                    <ExternalLink className="w-4 h-4 ml-2" />
+                    <ThumbsUp className="w-5 h-5 mr-2" />
+                    Post Review on Google
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
 
-                  <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
-                    Your review will be copied. Paste it on the Google review page.
+                  <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-4">
+                    Your review will be copied to clipboard and Google will open
                   </p>
                 </>
               )}
@@ -313,18 +429,39 @@ export default function ReviewFunnelPage() {
 
         {/* Step 3: Success */}
         {step === "success" && (
-          <Card className="shadow-xl border-0">
-            <CardContent className="pt-8 pb-8 text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+          <Card className="shadow-xl border-0 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white text-center">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-white" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Review Copied!
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Redirecting you to Google Reviews...
-              </p>
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mx-auto" />
+              <h2 className="text-2xl font-bold">Review Copied!</h2>
+              <p className="text-white/90 mt-1">Taking you to Google...</p>
+            </div>
+            <CardContent className="pt-6 pb-6 text-center">
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-4">
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  {copied && (
+                    <span className="flex items-center justify-center gap-2">
+                      <Copy className="w-4 h-4" />
+                      Review copied to clipboard!
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-gray-500">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Redirecting to Google Reviews...</span>
+              </div>
+              
+              {/* Manual link in case redirect fails */}
+              <Button
+                variant="outline"
+                onClick={() => business?.reviewLink && window.open(business.reviewLink, '_blank')}
+                className="mt-4 rounded-xl"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open Google Reviews Manually
+              </Button>
             </CardContent>
           </Card>
         )}

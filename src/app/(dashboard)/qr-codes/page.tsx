@@ -16,10 +16,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Download, Copy, Check, QrCode, RefreshCw, AlertCircle } from "lucide-react";
+import { LoadingSpinner, PageLoader } from "@/components/shared/loading-spinner";
+import { Download, Copy, Check, QrCode, RefreshCw, AlertCircle, ExternalLink, Smartphone } from "lucide-react";
 import { toast } from "sonner";
-// Use regular img for data URLs and external URLs
+import QRCode from "qrcode";
 
 interface Business {
   id: string;
@@ -40,10 +40,12 @@ function QRCodesContent() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [generatingLocal, setGeneratingLocal] = useState(false);
 
   const fetchBusinesses = useCallback(async () => {
     try {
-      const response = await fetch('/api/business/list');
+      const response = await fetch('/api/business/list', { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         const businessList = data.businesses || [];
@@ -70,7 +72,51 @@ function QRCodesContent() {
   }, [fetchBusinesses]);
 
   const business = businesses.find((b) => b.id === selectedBusiness);
-  const reviewFunnelUrl = business ? `${window.location.origin}/review/${business.id}` : "";
+  
+  // Get base URL for review funnel
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return '';
+  };
+  
+  const reviewFunnelUrl = business ? `${getBaseUrl()}/review/${business.id}` : "";
+
+  // Generate QR code locally when business changes
+  useEffect(() => {
+    const generateLocalQR = async () => {
+      if (!business || !reviewFunnelUrl) {
+        setQrDataUrl(null);
+        return;
+      }
+      
+      setGeneratingLocal(true);
+      try {
+        // If we have a cloud URL, use it
+        if (business.qrCodeUrl) {
+          setQrDataUrl(business.qrCodeUrl);
+        } else {
+          // Generate locally for preview
+          const dataUrl = await QRCode.toDataURL(reviewFunnelUrl, {
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#4f46e5',
+              light: '#ffffff',
+            },
+          });
+          setQrDataUrl(dataUrl);
+        }
+      } catch (error) {
+        console.error('Error generating local QR:', error);
+      } finally {
+        setGeneratingLocal(false);
+      }
+    };
+
+    generateLocalQR();
+  }, [business, reviewFunnelUrl]);
 
   const handleCopyLink = () => {
     if (reviewFunnelUrl) {
@@ -93,7 +139,11 @@ function QRCodesContent() {
       });
 
       if (response.ok) {
-        toast.success("QR code generated successfully!");
+        const data = await response.json();
+        toast.success("QR code saved to cloud!");
+        if (data.qrCodeUrl) {
+          setQrDataUrl(data.qrCodeUrl);
+        }
         fetchBusinesses();
       } else {
         const data = await response.json();
@@ -108,19 +158,44 @@ function QRCodesContent() {
   };
 
   const handleDownload = async (format: "png" | "svg") => {
-    if (!business?.qrCodeUrl) {
-      toast.error("Please generate a QR code first");
+    if (!qrDataUrl || !business) {
+      toast.error("Please wait for QR code to generate");
       return;
     }
 
     try {
-      // For Cloudinary URLs, we can download directly
-      const link = document.createElement('a');
-      link.href = business.qrCodeUrl;
-      link.download = `qr-code-${business.businessName.replace(/\s+/g, '-')}.${format}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const fileName = `qr-code-${business.businessName.replace(/\s+/g, '-').toLowerCase()}`;
+      
+      if (format === "svg") {
+        // Generate SVG
+        const svgString = await QRCode.toString(reviewFunnelUrl, {
+          type: 'svg',
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#4f46e5',
+            light: '#ffffff',
+          },
+        });
+        const blob = new Blob([svgString], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fileName}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Download PNG
+        const link = document.createElement('a');
+        link.href = qrDataUrl;
+        link.download = `${fileName}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
       toast.success(`QR Code downloaded as ${format.toUpperCase()}`);
     } catch (error) {
       console.error('Error downloading QR:', error);
@@ -128,12 +203,14 @@ function QRCodesContent() {
     }
   };
 
+  const handleTestScan = () => {
+    if (reviewFunnelUrl) {
+      window.open(reviewFunnelUrl, '_blank');
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageLoader message="Loading QR codes..." />;
   }
 
   if (businesses.length === 0) {
@@ -151,17 +228,20 @@ function QRCodesContent() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">QR Codes</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">QR Codes</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Generate QR codes to collect more reviews
         </p>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Configuration */}
-        <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+        <Card className="border-0 shadow-lg bg-white dark:bg-[#1a1a1f]">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Configure QR Code</CardTitle>
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-indigo-600" />
+              Configure QR Code
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2.5">
@@ -176,7 +256,12 @@ function QRCodesContent() {
                 <SelectContent>
                   {businesses.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
-                      {b.businessName}
+                      <div className="flex items-center gap-2">
+                        <span>{b.businessName}</span>
+                        {b.isConnected && (
+                          <Badge className="text-xs bg-green-100 text-green-700 border-0">Connected</Badge>
+                        )}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -184,10 +269,16 @@ function QRCodesContent() {
             </div>
 
             {business && !business.isConnected && (
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <p className="text-sm text-amber-700 dark:text-amber-400">
-                  Please connect your business with a Place ID first to generate QR codes.
-                </p>
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Business Not Connected</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                      Connect with Google Place ID to enable review collection.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -197,7 +288,7 @@ function QRCodesContent() {
                 <Input 
                   value={reviewFunnelUrl} 
                   readOnly 
-                  className="rounded-xl h-11 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900" 
+                  className="rounded-xl h-11 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm" 
                 />
                 <Button
                   variant="outline"
@@ -214,61 +305,72 @@ function QRCodesContent() {
                 </Button>
               </div>
               <p className="text-xs text-gray-500">
-                Customers will scan the QR code and land on this page to submit AI-generated reviews.
+                Customers scan the QR code and land on this page to submit AI-generated reviews.
               </p>
             </div>
 
+            {/* Test Link Button */}
+            <Button
+              variant="outline"
+              onClick={handleTestScan}
+              className="w-full rounded-xl h-11 border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Test Review Page
+            </Button>
+
             {business?.isConnected && (
               <div className="pt-5 border-t border-gray-100 dark:border-gray-800">
-                {!business.qrCodeUrl ? (
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Download Options</h4>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1 rounded-xl h-11 border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600"
+                    onClick={() => handleDownload("png")}
+                    disabled={!qrDataUrl}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    PNG
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 rounded-xl h-11 border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600"
+                    onClick={() => handleDownload("svg")}
+                    disabled={!qrDataUrl}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    SVG
+                  </Button>
+                </div>
+                {!business.qrCodeUrl && (
                   <Button
                     onClick={handleGenerateQR}
                     disabled={generating}
-                    className="w-full rounded-xl h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                    className="w-full mt-3 rounded-xl h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                   >
                     {generating ? (
                       <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
+                        <LoadingSpinner size="sm" className="mr-2" />
+                        Saving to Cloud...
                       </>
                     ) : (
                       <>
                         <QrCode className="w-4 h-4 mr-2" />
-                        Generate QR Code
+                        Save QR to Cloud
                       </>
                     )}
                   </Button>
-                ) : (
-                  <>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Download Options</h4>
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        className="flex-1 rounded-xl h-11 border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-indigo-800"
-                        onClick={() => handleDownload("png")}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        PNG
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 rounded-xl h-11 border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-indigo-800"
-                        onClick={() => handleDownload("svg")}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        SVG
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      onClick={handleGenerateQR}
-                      disabled={generating}
-                      className="w-full mt-3 text-gray-500 hover:text-indigo-600"
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
-                      Regenerate QR Code
-                    </Button>
-                  </>
+                )}
+                {business.qrCodeUrl && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleGenerateQR}
+                    disabled={generating}
+                    className="w-full mt-3 text-gray-500 hover:text-indigo-600"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
+                    Regenerate QR Code
+                  </Button>
                 )}
               </div>
             )}
@@ -276,9 +378,12 @@ function QRCodesContent() {
         </Card>
 
         {/* Preview */}
-        <Card className="border-0 shadow-soft bg-white dark:bg-[#1a1a1f]">
+        <Card className="border-0 shadow-lg bg-white dark:bg-[#1a1a1f]">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Preview</CardTitle>
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-indigo-600" />
+              Preview
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="qr" className="w-full">
@@ -288,45 +393,53 @@ function QRCodesContent() {
               </TabsList>
               <TabsContent value="qr" className="mt-6">
                 <div className="flex flex-col items-center">
-                  <div className="p-8 bg-white rounded-2xl shadow-soft-lg border border-gray-100">
-                    {business?.qrCodeUrl ? (
+                  <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    {generatingLocal ? (
+                      <div className="w-[200px] h-[200px] flex items-center justify-center">
+                        <LoadingSpinner size="lg" variant="logo" />
+                      </div>
+                    ) : qrDataUrl ? (
                       <img
-                        src={business.qrCodeUrl}
+                        src={qrDataUrl}
                         alt="QR Code"
                         width={200}
                         height={200}
                         className="rounded-lg"
                       />
                     ) : (
-                      <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                      <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div className="text-center text-gray-500 p-4">
                           <QrCode className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">QR code will appear here</p>
+                          <p className="text-sm">Select a business</p>
                         </div>
                       </div>
                     )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">
                     Scan this code to leave a review for{" "}
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {business?.businessName}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {business?.businessName || "your business"}
                     </span>
                   </p>
                 </div>
               </TabsContent>
               <TabsContent value="card" className="mt-6">
-                <div className="p-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl text-white text-center shadow-lg shadow-indigo-500/25">
+                <div className="p-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl text-white text-center shadow-xl shadow-indigo-500/25">
                   <Badge variant="secondary" className="mb-4 bg-white/20 text-white border-0">
                     Google Review
                   </Badge>
-                  <h3 className="text-2xl font-bold mb-2">{business?.businessName}</h3>
+                  <h3 className="text-2xl font-bold mb-2">{business?.businessName || "Your Business"}</h3>
                   {business?.businessType && (
                     <p className="text-white/80 mb-6">{business.businessType.replace(/_/g, " ")}</p>
                   )}
                   <div className="bg-white p-4 rounded-xl inline-block shadow-lg">
-                    {business?.qrCodeUrl ? (
+                    {generatingLocal ? (
+                      <div className="w-[120px] h-[120px] flex items-center justify-center">
+                        <LoadingSpinner size="md" variant="logo" />
+                      </div>
+                    ) : qrDataUrl ? (
                       <img
-                        src={business.qrCodeUrl}
+                        src={qrDataUrl}
                         alt="QR Code"
                         width={120}
                         height={120}
@@ -353,7 +466,7 @@ function QRCodesContent() {
 
 export default function QRCodesPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+    <Suspense fallback={<PageLoader message="Loading QR codes..." />}>
       <QRCodesContent />
     </Suspense>
   );
