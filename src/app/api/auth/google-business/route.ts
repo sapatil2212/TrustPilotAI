@@ -4,8 +4,6 @@ import { authOptions } from '@/lib/auth';
 
 // Google OAuth configuration for Business Profile API
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-// GOOGLE_CLIENT_SECRET is used in the callback route
-const _GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 function getRedirectUri() {
   if (process.env.NEXT_PUBLIC_APP_URL) {
