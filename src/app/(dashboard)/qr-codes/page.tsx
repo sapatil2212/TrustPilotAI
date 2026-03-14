@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +31,7 @@ interface Business {
   isConnected: boolean;
 }
 
-export default function QRCodesPage() {
+function QRCodesContent() {
   const searchParams = useSearchParams();
   const businessParam = searchParams.get("business");
   
@@ -348,5 +348,13 @@ export default function QRCodesPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function QRCodesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>}>
+      <QRCodesContent />
+    </Suspense>
   );
 }

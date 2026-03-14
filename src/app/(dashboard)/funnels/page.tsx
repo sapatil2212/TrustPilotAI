@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Funnel, ExternalLink, Copy, Check, BarChart3, QrCode, TrendingUp, Users, AlertCircle } from "lucide-react";
+import { Funnel, ExternalLink, Copy, Check, BarChart3, QrCode, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   LineChart,
@@ -115,13 +115,7 @@ export default function FunnelsPage() {
           icon={Funnel}
           title="No Active Funnels"
           description="Connect a business and generate a QR code to start collecting reviews through funnels"
-        >
-          <Link href="/businesses">
-            <Button className="mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
-              Go to Businesses
-            </Button>
-          </Link>
-        </EmptyState>
+        />
       </div>
     );
   }

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email is already a member
-    const existingMember = await prisma.teamMember.findFirst({
+    await prisma.teamMember.findFirst({
       where: {
         teamId: team.id,
         // Need to find user by email first

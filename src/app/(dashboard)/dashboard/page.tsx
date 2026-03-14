@@ -89,7 +89,7 @@ const RATING_COLORS = {
 };
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  useSession();
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -163,7 +163,7 @@ export default function DashboardPage() {
         const data = await response.json();
         toast.error(data.error || "Failed to connect business");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred");
     } finally {
       setConnecting(false);
@@ -186,7 +186,7 @@ export default function DashboardPage() {
         const data = await response.json();
         toast.error(data.error || "Failed to generate QR code");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred");
     } finally {
       setGeneratingQR(false);

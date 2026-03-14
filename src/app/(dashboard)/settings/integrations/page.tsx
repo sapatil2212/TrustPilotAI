@@ -16,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Check, ExternalLink, Building2, MessageSquare, Bell, Webhook, Sparkles, Slack } from "lucide-react";
 import { toast } from "sonner";
@@ -57,7 +56,7 @@ interface Integration {
 export default function IntegrationsPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [webhookCount, setWebhookCount] = useState<WebhookCount>({ total: 0, active: 0 });
-  const [slackIntegration, setSlackIntegration] = useState<SlackIntegration | null>(null);
+  const [slackIntegration] = useState<SlackIntegration | null>(null);
   const [loading, setLoading] = useState(true);
   const [slackDialogOpen, setSlackDialogOpen] = useState(false);
   const [slackWebhookUrl, setSlackWebhookUrl] = useState("");

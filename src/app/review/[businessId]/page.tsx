@@ -33,7 +33,7 @@ export default function ReviewFunnelPage() {
   const [selectedReview, setSelectedReview] = useState("");
   const [generatingReviews, setGeneratingReviews] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [, setCopied] = useState(false);
 
   useEffect(() => {
     if (businessId) {
@@ -191,7 +191,7 @@ export default function ReviewFunnelPage() {
             {business.businessName}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            We'd love to hear your feedback!
+            We&apos;d love to hear your feedback!
           </p>
         </div>
 

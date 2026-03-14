@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Building2, Plus, Search, MapPin, ExternalLink, QrCode, LinkIcon, CheckCircle, AlertCircle, RefreshCw, Trash2, MoreVertical, Unplug } from "lucide-react";
+import { Building2, Plus, Search, ExternalLink, QrCode, LinkIcon, CheckCircle, AlertCircle, RefreshCw, Trash2, MoreVertical, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -192,7 +192,15 @@ export default function BusinessesPage() {
 
   const handleDeleteBusiness = async (businessId: string, businessName: string, isConnected: boolean, totalReviews: number) => {
     const warningMessage = isConnected && totalReviews > 0
-      ? `Are you sure you want to delete "${businessName}"?\n\nThis will permanently delete:\n• The business profile\n• ${totalReviews} review(s)\n• All analytics data\n• QR codes and review links\n\nThis action cannot be undone.`
+      ? `Are you sure you want to delete "${businessName}"?
+
+This will permanently delete:
+• The business profile
+• ${totalReviews} review(s)
+• All analytics data
+• QR codes and review links
+
+This action cannot be undone.`
       : `Are you sure you want to delete "${businessName}"? This action cannot be undone.`;
 
     if (!confirm(warningMessage)) {
@@ -292,7 +300,7 @@ export default function BusinessesPage() {
                     rel="noopener noreferrer"
                     className="text-indigo-600 hover:underline"
                   >
-                    Google's Place ID Finder
+                    Google&apos;s Place ID Finder
                   </a>
                 </p>
               </div>

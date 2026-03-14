@@ -1,9 +1,9 @@
-import { NextRequest } from 'next/server';
+
 import { requireActiveSubscription, successResponse, errorResponse } from '@/lib/session';
 import prisma from '@/lib/prisma';
 
 // GET /api/business/list - Get all businesses for the current user
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const { error, auth } = await requireActiveSubscription();
     

@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has an unconnected business to update, otherwise create new
-    let business = await prisma.business.findFirst({
+    const business = await prisma.business.findFirst({
       where: { 
         userId: session.user.id,
         isConnected: false,

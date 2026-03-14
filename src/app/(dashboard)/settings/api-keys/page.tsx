@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Key, Trash2, Copy, Check, Eye, EyeOff, AlertTriangle, Clock, Shield } from "lucide-react";
+import { Plus, Key, Trash2, Copy, Check, AlertTriangle, Clock, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const API_PERMISSIONS = [

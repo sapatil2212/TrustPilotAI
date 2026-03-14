@@ -50,7 +50,7 @@ export default function SignupPage() {
     agreeTerms: false,
   });
   const [otp, setOtp] = useState("");
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [, setIsEmailVerified] = useState(false);
   const [error, setError] = useState("");
 
   // Step 1: Send OTP
@@ -304,7 +304,7 @@ export default function SignupPage() {
               className="h-14 text-center text-2xl tracking-[0.5em] rounded-xl border-gray-200 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500 font-mono"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Didn't receive the code?{" "}
+              Didn&apos;t receive the code?{" "}
               <button
                 type="button"
                 onClick={handleSendOtp}

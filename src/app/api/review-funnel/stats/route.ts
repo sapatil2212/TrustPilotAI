@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+
 import { requireActiveSubscription, successResponse, errorResponse } from '@/lib/session';
 import prisma from '@/lib/prisma';
 
@@ -18,7 +18,7 @@ interface FunnelStats {
 }
 
 // GET /api/review-funnel/stats - Get funnel statistics for all user's businesses
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const { error, auth } = await requireActiveSubscription();
     

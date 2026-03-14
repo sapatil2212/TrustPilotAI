@@ -176,7 +176,7 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16 ring-4 ring-gray-100 dark:ring-gray-800">
-                <AvatarImage src={session?.user?.image || undefined} />
+                <AvatarImage src={(session?.user as { image?: string })?.image || undefined} />
                 <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-600 dark:text-indigo-400">
                   {profile?.name?.charAt(0) || "U"}
                 </AvatarFallback>
@@ -220,7 +220,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-6">
             <div className="relative">
               <Avatar className="w-20 h-20 ring-4 ring-gray-100 dark:ring-gray-800">
-                <AvatarImage src={session?.user?.image || undefined} />
+                <AvatarImage src={(session?.user as { image?: string })?.image || undefined} />
                 <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-600 dark:text-indigo-400">
                   {profile?.name?.charAt(0) || "U"}
                 </AvatarFallback>
