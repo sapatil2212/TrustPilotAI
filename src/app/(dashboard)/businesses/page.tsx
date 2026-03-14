@@ -56,13 +56,19 @@ export default function BusinessesPage() {
 
   const fetchBusinesses = useCallback(async () => {
     try {
-      const response = await fetch('/api/business/list');
+      // Use cache-busting for fresh data
+      const response = await fetch('/api/business/list', {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (response.ok) {
         const data = await response.json();
         setBusinesses(data.businesses || []);
       } else {
         // If list endpoint doesn't exist, try profile endpoint
-        const profileResponse = await fetch('/api/business/profile');
+        const profileResponse = await fetch('/api/business/profile', {
+          cache: "no-store",
+        });
         if (profileResponse.ok) {
           const data = await profileResponse.json();
           if (data.business) {

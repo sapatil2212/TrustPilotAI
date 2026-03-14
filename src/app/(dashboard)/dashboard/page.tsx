@@ -106,28 +106,32 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch business profile
-      const profileRes = await fetch("/api/business/profile");
+      // Fetch business profile with cache-busting for fresh data
+      const profileRes = await fetch("/api/business/profile", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         setBusiness(profileData.business);
 
-        // If business is connected, fetch analytics and reviews
+        // If business is connected, fetch analytics and reviews in parallel
         if (profileData.business?.isConnected) {
           const [analyticsRes, reviewsRes] = await Promise.all([
-            fetch("/api/business/analytics"),
-            fetch(`/api/reviews/business/${profileData.business.id}?limit=5`),
+            fetch("/api/business/analytics", { cache: "no-store" }),
+            fetch(`/api/reviews/business/${profileData.business.id}?limit=5`, {
+              cache: "no-store",
+            }),
           ]);
 
-          if (analyticsRes.ok) {
-            const analyticsData = await analyticsRes.json();
-            setAnalytics(analyticsData);
-          }
+          // Process responses in parallel
+          const [analyticsData, reviewsData] = await Promise.all([
+            analyticsRes.ok ? analyticsRes.json() : Promise.resolve(null),
+            reviewsRes.ok ? reviewsRes.json() : Promise.resolve({ reviews: [] }),
+          ]);
 
-          if (reviewsRes.ok) {
-            const reviewsData = await reviewsRes.json();
-            setReviews(reviewsData.reviews || []);
-          }
+          if (analyticsData) setAnalytics(analyticsData);
+          setReviews(reviewsData.reviews || []);
         }
       }
     } catch (error) {
