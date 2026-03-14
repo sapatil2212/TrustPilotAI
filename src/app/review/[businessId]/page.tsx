@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Star, Loader2, Sparkles, Copy, ExternalLink, CheckCircle, ArrowRight, Building2, ThumbsUp, Edit3, Clipboard, MousePointer } from "lucide-react";
+import { Star, Sparkles, Copy, ExternalLink, CheckCircle, ArrowRight, Building2, ThumbsUp, Edit3, Clipboard } from "lucide-react";
 
 interface BusinessInfo {
   id: string;
@@ -33,7 +33,6 @@ export default function ReviewFunnelPage() {
   const [selectedReview, setSelectedReview] = useState("");
   const [generatingReviews, setGeneratingReviews] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [isCustom, setIsCustom] = useState(false);
 
   const fetchBusinessInfo = useCallback(async () => {
@@ -139,7 +138,6 @@ export default function ReviewFunnelPage() {
     // Copy review to clipboard
     try {
       await navigator.clipboard.writeText(selectedReview);
-      setCopied(true);
       toast.success("Review copied! Opening Google Reviews...", {
         duration: 5000,
       });
@@ -477,7 +475,7 @@ export default function ReviewFunnelPage() {
                   <Clipboard className="w-4 h-4" />
                   <span>Copied to clipboard:</span>
                 </div>
-                <p className="italic">"{selectedReview.slice(0, 100)}{selectedReview.length > 100 ? '...' : ''}"</p>
+                <p className="italic">&ldquo;{selectedReview.slice(0, 100)}{selectedReview.length > 100 ? '...' : ''}&rdquo;</p>
               </div>
 
               {/* Copy again button */}
@@ -503,7 +501,7 @@ export default function ReviewFunnelPage() {
               </Button>
 
               <p className="text-xs text-center text-gray-400 mt-4">
-                For security reasons, browsers don't allow auto-paste. Please paste manually.
+                For security reasons, browsers don&apos;t allow auto-paste. Please paste manually.
               </p>
             </CardContent>
           </Card>
