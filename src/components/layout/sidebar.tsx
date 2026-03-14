@@ -57,7 +57,7 @@ export function Sidebar({ className }: SidebarProps) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const NavItem = ({ item, isBottom = false }: { item: typeof navigation[0]; isBottom?: boolean }) => {
+  const NavItem = ({ item }: { item: typeof navigation[0] }) => {
     const Icon = item.icon;
     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
     const isHovered = hoveredItem === item.name;
@@ -142,7 +142,7 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="border-t border-gray-100 dark:border-gray-800 p-3">
         <nav className="space-y-1">
           {bottomNavigation.map((item) => (
-            <NavItem key={item.name} item={item} isBottom />
+            <NavItem key={item.name} item={item} />
           ))}
         </nav>
       </div>
