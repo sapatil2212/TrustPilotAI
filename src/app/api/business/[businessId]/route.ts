@@ -113,24 +113,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
-    // Delete all reviews first (cascade)
-    await prisma.review.deleteMany({
-      where: { businessId },
-    });
+    // Use transaction to ensure all deletions succeed or none do
+    await prisma.$transaction(async (tx) => {
+      // Delete all reviews first (cascade)
+      await tx.review.deleteMany({
+        where: { businessId },
+      });
 
-    // Delete review funnel sessions
-    await prisma.reviewFunnelSession.deleteMany({
-      where: { businessId },
-    });
+      // Delete review funnel sessions
+      await tx.reviewFunnelSession.deleteMany({
+        where: { businessId },
+      });
 
-    // Delete review analytics
-    await prisma.reviewAnalytics.deleteMany({
-      where: { businessId },
-    });
+      // Delete review analytics (if exists)
+      await tx.reviewAnalytics.deleteMany({
+        where: { businessId },
+      });
 
-    // Delete the business
-    await prisma.business.delete({
-      where: { id: businessId },
+      // Delete the business
+      await tx.business.delete({
+        where: { id: businessId },
+      });
     });
 
     return NextResponse.json({
@@ -138,7 +141,10 @@ export async function DELETE(
     });
   } catch (error) {
     console.error('Delete business error:', error);
-    return NextResponse.json({ error: 'Failed to delete business' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to delete business', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
   }
 }
 

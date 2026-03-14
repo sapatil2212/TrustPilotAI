@@ -217,18 +217,23 @@ This action cannot be undone.`
     try {
       const response = await fetch(`/api/business/${businessId}`, {
         method: 'DELETE',
+        cache: 'no-store',
       });
 
       if (response.ok) {
         toast.success(`"${businessName}" deleted successfully`);
+        // Remove the deleted business from the local state immediately
+        setBusinesses(prev => prev.filter(b => b.id !== businessId));
+        // Then refresh the list from server
         fetchBusinesses();
       } else {
         const data = await response.json();
-        toast.error(data.error || "Failed to delete business");
+        console.error('Delete business error:', data);
+        toast.error(data.error || data.details || "Failed to delete business");
       }
     } catch (error) {
       console.error('Error deleting business:', error);
-      toast.error("Failed to delete business");
+      toast.error("Failed to delete business. Please try again.");
     } finally {
       setDeletingBusiness(null);
     }
