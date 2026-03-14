@@ -73,59 +73,69 @@ function QRCodesContent() {
 
   const business = businesses.find((b) => b.id === selectedBusiness);
   
-  // Get base URL for review funnel - use production URL
-  const getBaseUrl = () => {
-    // Priority: NEXT_PUBLIC_APP_URL > window.location.origin
-    if (process.env.NEXT_PUBLIC_APP_URL) {
-      return process.env.NEXT_PUBLIC_APP_URL;
-    }
-    if (typeof window !== 'undefined') {
-      // Use actual domain in production, not localhost
-      const origin = window.location.origin;
-      if (origin.includes('localhost')) {
-        return 'https://trust-pilot-ai.vercel.app';
-      }
-      return origin;
-    }
-    return 'https://trust-pilot-ai.vercel.app';
-  };
-  
-  const reviewFunnelUrl = business ? `${getBaseUrl()}/review/${business.id}` : "";
+  // Get base URL for review funnel - always use production URL
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://trust-pilot-ai.vercel.app';
+  const reviewFunnelUrl = business ? `${BASE_URL}/review/${business.id}` : "";
 
-  // Generate QR code locally when business changes
+  // Generate QR code locally IMMEDIATELY when business is selected
   useEffect(() => {
-    const generateLocalQR = async () => {
-      if (!business || !reviewFunnelUrl) {
+    let isMounted = true;
+    
+    const generateQRPreview = async () => {
+      // Clear previous QR when no business selected
+      if (!selectedBusiness) {
         setQrDataUrl(null);
+        setGeneratingLocal(false);
         return;
       }
-      
+
+      // Find the business
+      const biz = businesses.find((b) => b.id === selectedBusiness);
+      if (!biz) {
+        setQrDataUrl(null);
+        setGeneratingLocal(false);
+        return;
+      }
+
       setGeneratingLocal(true);
+      
       try {
-        // If we have a cloud URL, use it
-        if (business.qrCodeUrl) {
-          setQrDataUrl(business.qrCodeUrl);
-        } else {
-          // Generate locally for preview
-          const dataUrl = await QRCode.toDataURL(reviewFunnelUrl, {
-            width: 300,
-            margin: 2,
-            color: {
-              dark: '#4f46e5',
-              light: '#ffffff',
-            },
-          });
+        // Generate the URL for this business
+        const url = `${BASE_URL}/review/${biz.id}`;
+        
+        // Generate QR code locally for instant preview
+        const dataUrl = await QRCode.toDataURL(url, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#4f46e5',
+            light: '#ffffff',
+          },
+          errorCorrectionLevel: 'M',
+        });
+        
+        if (isMounted) {
           setQrDataUrl(dataUrl);
         }
       } catch (error) {
-        console.error('Error generating local QR:', error);
+        console.error('Error generating QR preview:', error);
+        if (isMounted) {
+          setQrDataUrl(null);
+        }
       } finally {
-        setGeneratingLocal(false);
+        if (isMounted) {
+          setGeneratingLocal(false);
+        }
       }
     };
 
-    generateLocalQR();
-  }, [business, reviewFunnelUrl]);
+    // Generate immediately
+    generateQRPreview();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedBusiness, businesses, BASE_URL]);
 
   const handleCopyLink = () => {
     if (reviewFunnelUrl) {
