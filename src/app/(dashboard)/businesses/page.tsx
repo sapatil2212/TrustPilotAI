@@ -389,13 +389,11 @@ This action cannot be undone.`
                       <Building2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-                            <MoreVertical className="w-4 h-4 text-gray-500" />
-                          </Button>
-                        }
-                      />
+                      <DropdownMenuTrigger>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                          <MoreVertical className="w-4 h-4 text-gray-500" />
+                        </Button>
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         {business.isConnected && (
                           <>
