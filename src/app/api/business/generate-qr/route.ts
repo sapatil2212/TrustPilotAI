@@ -15,12 +15,19 @@ const generateQRSchema = z.object({
 
 // Get the base URL from environment or use a default
 function getBaseUrl() {
-  if (process.env.NEXTAUTH_URL) {
-    return process.env.NEXTAUTH_URL;
+  // Priority 1: Custom domain set in environment
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
   }
+  // Priority 2: Vercel deployment URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
+  // Priority 3: NEXTAUTH_URL (but only if not localhost in production)
+  if (process.env.NEXTAUTH_URL && !process.env.NEXTAUTH_URL.includes('localhost')) {
+    return process.env.NEXTAUTH_URL;
+  }
+  // Fallback for development
   return 'http://localhost:3000';
 }
 
