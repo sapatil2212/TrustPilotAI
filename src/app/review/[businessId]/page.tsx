@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Star, Loader2, Sparkles, Copy, ExternalLink, CheckCircle, ArrowRight, Building2, ThumbsUp, Edit3 } from "lucide-react";
+import { Star, Loader2, Sparkles, Copy, ExternalLink, CheckCircle, ArrowRight, Building2, ThumbsUp, Edit3, Clipboard, MousePointer } from "lucide-react";
 
 interface BusinessInfo {
   id: string;
@@ -140,7 +140,9 @@ export default function ReviewFunnelPage() {
     try {
       await navigator.clipboard.writeText(selectedReview);
       setCopied(true);
-      toast.success("Review copied to clipboard!");
+      toast.success("Review copied! Opening Google Reviews...", {
+        duration: 5000,
+      });
 
       // Update session
       if (sessionId) {
@@ -154,21 +156,21 @@ export default function ReviewFunnelPage() {
         });
       }
 
-      // Show success state briefly before redirect
+      // Show success state with instructions
       setStep("success");
       
-      // Redirect to Google review page after a short delay
-      setTimeout(() => {
-        if (business?.reviewLink) {
-          window.location.href = business.reviewLink;
-        }
-      }, 2000);
+      // Open Google review page in a new tab immediately
+      if (business?.reviewLink) {
+        // Small delay to show success state
+        setTimeout(() => {
+          window.open(business.reviewLink, "_blank");
+        }, 1500);
+      }
     } catch (error) {
       console.error("Clipboard error:", error);
-      // Fallback: still redirect even if clipboard fails
-      if (business?.reviewLink) {
-        window.open(business.reviewLink, "_blank");
-      }
+      // Show manual copy fallback
+      toast.error("Could not copy automatically. Please copy the review manually.");
+      setStep("success");
     }
   };
 
@@ -435,33 +437,74 @@ export default function ReviewFunnelPage() {
                 <CheckCircle className="w-10 h-10 text-white" />
               </div>
               <h2 className="text-2xl font-bold">Review Copied!</h2>
-              <p className="text-white/90 mt-1">Taking you to Google...</p>
+              <p className="text-white/90 mt-1">Opening Google Reviews...</p>
             </div>
-            <CardContent className="pt-6 pb-6 text-center">
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-4">
-                <p className="text-sm text-green-700 dark:text-green-400">
-                  {copied && (
-                    <span className="flex items-center justify-center gap-2">
-                      <Copy className="w-4 h-4" />
-                      Review copied to clipboard!
-                    </span>
-                  )}
-                </p>
+            <CardContent className="pt-6 pb-6">
+              {/* Instructions */}
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 mb-4">
+                <h3 className="font-semibold text-indigo-900 dark:text-indigo-300 mb-3 text-center">
+                  Final Step: Paste Your Review
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</div>
+                    <span className="text-gray-700 dark:text-gray-300">Google Reviews page will open</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+                    <span className="text-gray-700 dark:text-gray-300">Click the review text box</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">3</div>
+                    <div className="text-gray-700 dark:text-gray-300">
+                      <span>Press </span>
+                      <kbd className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl+V</kbd>
+                      <span> or </span>
+                      <kbd className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Cmd+V</kbd>
+                      <span> to paste</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">4</div>
+                    <span className="text-gray-700 dark:text-gray-300">Select stars and submit!</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-2 text-gray-500">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Redirecting to Google Reviews...</span>
+
+              {/* Copied review preview */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 mb-4 text-sm text-gray-600 dark:text-gray-400 max-h-24 overflow-y-auto">
+                <div className="flex items-center gap-2 mb-2 text-green-600 dark:text-green-400 font-medium">
+                  <Clipboard className="w-4 h-4" />
+                  <span>Copied to clipboard:</span>
+                </div>
+                <p className="italic">"{selectedReview.slice(0, 100)}{selectedReview.length > 100 ? '...' : ''}"</p>
               </div>
-              
-              {/* Manual link in case redirect fails */}
+
+              {/* Copy again button */}
               <Button
                 variant="outline"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(selectedReview);
+                  toast.success("Review copied again!");
+                }}
+                className="w-full mb-3 rounded-xl"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy Review Again
+              </Button>
+              
+              {/* Manual link */}
+              <Button
                 onClick={() => business?.reviewLink && window.open(business.reviewLink, '_blank')}
-                className="mt-4 rounded-xl"
+                className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Open Google Reviews Manually
+                Open Google Reviews
               </Button>
+
+              <p className="text-xs text-center text-gray-400 mt-4">
+                For security reasons, browsers don't allow auto-paste. Please paste manually.
+              </p>
             </CardContent>
           </Card>
         )}
