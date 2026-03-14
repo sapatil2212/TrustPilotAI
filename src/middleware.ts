@@ -22,8 +22,17 @@ const adminRoutes = [
 // Public routes (auth pages)
 const authRoutes = ['/login', '/signup', '/forgot-password'];
 
+// Public routes that should never require auth (review funnel for customers)
+const publicRoutes = ['/review'];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Check if this is a public route first (review funnel for customers)
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
   
   // Get the token
   const token = await getToken({ 
